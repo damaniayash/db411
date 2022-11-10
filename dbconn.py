@@ -39,6 +39,7 @@ def hello_world():
 def apt():
     return result1
 
+# Insert a new unit in an existing apartment.
 @app.route('/addUnit', methods=['POST'])
 def add_unit():
     _json = request.json
@@ -63,8 +64,8 @@ def add_unit():
         print(e)
     finally:
         cursor.close()
-        cnx.close()
- 
+
+# API to update rental cost of available units of specific bed configuration from a given apartment.
 @app.route('/updateUnitCost', methods=['POST'])
 def update_unit_cost():
     _json = request.json
@@ -87,8 +88,28 @@ def update_unit_cost():
         print(e)
     finally:
         cursor.close()
-        cnx.close()
 
+# API to remove apartment from apartment table. the change will be cascaded to all the tables having apartmentid as foreign key.
+@app.route("removeApartment/<id>", methods=["DELETE"])
+def remove_apartment(id):
+
+	# save edits
+    sql = "DELETE FROM apartment WHERE apartmentid = %s"
+    data = (id)
+    try:	
+        cursor = cnx.cursor()
+        cursor.execute(sql, data)
+        cnx.commit()
+
+        resp = jsonify(cursor.rowcount + ' apartment removed successfully!')
+        resp.status_code = 200
+        return resp
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+
+# Get the cheapest units  per leasing agency in specific zipcodes and having specific bed configurations
 @app.route('/getCheapestApartments', methods=['GET'])
 def get_cheapest_units():
     _json = request.json
@@ -96,7 +117,7 @@ def get_cheapest_units():
     _zipcode = "\"" + "\", \"".join(_json['zipcode']) + "\""
 
 	# save edits
-    sql = """SELECT u.unitnumber AS Unit, a.apartmentname AS ApartmentName, u.rentalcost AS rentalCost,
+    sql = """SELECT u.unitnumber AS Unit, a.apartmentname AS ApartmentName, a.apartmentid AS ApartmentId, u.rentalcost AS rentalCost,
             la.name AS LeasingAgency, a.address AS Address, a.zipcode AS ZipCode
             FROM unit u NATURAL JOIN apartment a JÖIN leasingagency la USING(agencyid)
             WHERE u.numbedrooms = %s AND u.availablity = "yes" AND a.zipcode IN (%s) AND
@@ -116,7 +137,6 @@ def get_cheapest_units():
         print(e)
     finally:
         cursor.close()
-        cnx.close()
 
 # main driver function
 if __name__ == '__main__':
