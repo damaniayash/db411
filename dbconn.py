@@ -61,6 +61,9 @@ def add_unit():
         return resp
     except Exception as e:
         print(e)
+    finally:
+        cursor.close()
+        cnx.close()
  
 @app.route('/updateUnitCost', methods=['POST'])
 def update_unit_cost():
@@ -82,6 +85,38 @@ def update_unit_cost():
         return resp
     except Exception as e:
         print(e)
+    finally:
+        cursor.close()
+        cnx.close()
+
+@app.route('/getCheapestApartments', methods=['GET'])
+def get_cheapest_units():
+    _json = request.json
+    _numbedrooms = _json['numBedrooms']
+    _zipcode = "\"" + "\", \"".join(_json['zipcode']) + "\""
+
+	# save edits
+    sql = """SELECT u.unitnumber AS Unit, a.apartmentname AS ApartmentName, u.rentalcost AS rentalCost,
+            la.name AS LeasingAgency, a.address AS Address, a.zipcode AS ZipCode
+            FROM unit u NATURAL JOIN apartment a JÖIN leasingagency la USING(agencyid)
+            WHERE u.numbedrooms = %s AND u.availablity = "yes" AND a.zipcode IN (%s) AND
+            u.rentalcost = (
+                SELECT MIN(rentalcost)
+                FROM unit u2 NATURAL JOIN apartment a2 JOIN leasingagency la2 USING(agencyid)
+                WHERE u2.numbedrooms = %s AND u2.availablity = "yes" AND a2.zipcode IN (%s) AND la.agencyid = la2.agencyid
+            )
+            ORDER BY rentalcost ASC"""
+    data = (_numbedrooms, _zipcode, _numbedrooms, _zipcode)
+    try:	
+        cursor = cnx.cursor()
+        cursor.execute(sql, data)
+        cheapUnits = cursor.fetchall()
+        return cheapUnits
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        cnx.close()
 
 # main driver function
 if __name__ == '__main__':
