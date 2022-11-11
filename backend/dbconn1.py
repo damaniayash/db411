@@ -46,10 +46,12 @@
 
 
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import mysql.connector 
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
                               
 cnx = mysql.connector.connect(user='root', password='plus1234',
                               host='104.154.107.248',
@@ -147,7 +149,9 @@ def get_apt():
 # Insert a new unit in an existing apartment.
 @app.route('/addUnit', methods=['POST'])
 def add_unit():
-    _json = request.json
+    
+
+    _json = request.json['body']
     _unitnumber = _json['unitNumber']
     _apartmentid = _json['apartmentId']
     _area = _json['area']
@@ -162,11 +166,13 @@ def add_unit():
         cursor.execute(sql, data)
         cnx.commit()
 
-        resp = jsonify('User added successfully!')
+        resp = jsonify('Unit added successfully!')
+
         # resp.status_code = 200
         return resp
     except Exception as e:
-        return e
+        
+        return str(e)
 
 @app.route('/area', methods =['GET'])
 def area():
