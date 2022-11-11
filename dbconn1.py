@@ -85,7 +85,7 @@ def get_apt():
         #   cursor.execute(query)
         #   min_price = cursor.fetchall()[0]
 
-        # max_price = request.args.get('max')
+        max_price = request.args.get('max')
 
         # if not max_price:
         #   cursor = cnx.cursor(dictionary=True)
