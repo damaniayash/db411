@@ -22,14 +22,14 @@ class UserView extends React.Component{
                 break;
             }
         }
-        var zipcode = event.target[6].value;
-        var minprice = event.target[7].value;
-        var maxprice = event.target[8].value;
+        var zipcode = event.target[5].value;
+        var minprice = event.target[6].value;
+        var maxprice = event.target[7].value;
         
         console.log(beds)
         var request = "http://127.0.0.1:8000/apt";
         request += "?zipcode="+zipcode;
-        if(beds != "0"){
+        if(beds != null && beds != undefined && beds != "0"){
             request += "&bedrooms="+beds;
         }
         request += "&min="+minprice;

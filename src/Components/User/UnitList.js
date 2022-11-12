@@ -21,7 +21,7 @@ export default class UnitList extends React.Component{
       // </div>
 
       <div>
-        <Grid></Grid>
+        <Grid units = {this.props.units}></Grid>
       </div>
 
       )
