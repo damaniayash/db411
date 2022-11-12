@@ -19,3 +19,17 @@
   padding: 3vh 3vw;
   width: 100%;
 }
+
+.agentForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-horizontal {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form-control{
+  margin-left: 29vw;
+}

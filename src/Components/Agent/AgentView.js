@@ -142,60 +142,78 @@ class AgentView extends React.Component{
                 <button onClick={this.updatePriceButton.bind(this)}>Update existing unit/apartment</button>
                 <button onClick={this.removeApartmentButton.bind(this)}>Remove an apartment</button>
 
-                <form class="add-unit-form" style={{display:"none"}} onSubmit={this.addUnitSubmit}>
-                    <label>
-                        Select Apartment:
-                        <input type="number"></input>
-                    </label>
-                    <label>
-                        New Unit Number:
-                        <input type="number"></input>
-                    </label>
+                <form class="form-horizontal add-unit-form" style={{display:"none"}} onSubmit={this.addUnitSubmit}>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Select Apartment:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter Unit number:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
                     
-                    <label>
-                        Area :
-                        <input type="number"></input>
-                    </label>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter Area in sqft:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
 
-                    <label>
-                        Number of bedrooms:
-                        <input type="number"></input>
-                    </label>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter number of bedrooms:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
 
-                    <label>
-                        Rental cost:
-                        <input type="number"></input>
-                    </label>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter rental cost:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
 
                     <input type="submit" value="submit"/>
                 </form>
                 <h3 style={{display:"none"}} class="addUnit-message"></h3>
 
-                <form class="update-price-form" style={{display:"none"}} onSubmit={this.updatePrice}>
-                    <label>
-                        Select Apartment:
-                        <input type="number"></input>
-                    </label>
-                    <label>
-                        Number of bedrooms:
-                        <input type="number"></input>
-                    </label>
+                <form class="form-horizontal update-price-form" style={{display:"none"}} onSubmit={this.updatePrice}>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter Apartment id:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter number of bedrooms:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
 
-                    <label>
-                        Rental cost:
-                        <input type="number"></input>
-                    </label>
+                    <div class="form-group">
+                    <label class="control-label col-sm-2">Enter updated rental cost:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
 
                     <input type="submit" value="submit"/>
                 </form>
                 <h3 style={{display:"none"}} class="updatePrice-message"></h3>
 
 
-                <form class="remove-apt-form" style={{display:"none"}} onSubmit={this.removeApartment}>
-                    <label>
-                        Select Apartment to delete:
-                        <input type="number"></input>
-                    </label>
+                <form class="form-horizontal remove-apt-form" style={{display:"none"}} onSubmit={this.removeApartment}>
+                <div class="form-group">
+                    <label class="control-label col-sm-2">Enter Apartment id:</label>
+                    <div class="col-sm-5" >
+                        <input class="form-control" type="number"></input>
+                        </div>
+                    </div>
                     
                     <input type="submit" value="submit"/>
                 </form>
