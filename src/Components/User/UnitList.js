@@ -1,6 +1,6 @@
-import Grid from "./Grid.js"
+import UnitGrid from "./UnitGrid.js"
+import AgencyGrid from "./AgencyGrid.js"
 import React from "react";
-import DisplayUnit from "./DisplayUnit.js";
 
 export default class UnitList extends React.Component{
 
@@ -9,21 +9,21 @@ export default class UnitList extends React.Component{
     }
 
     render(){
-
       return(
-      // <div className="listView">
-      //   {this.props.units.map((unit)=>{
-      //       return (
-      //           <DisplayUnit unit={unit}/>
-      //       )
-      //   })
-      //   }
-      // </div>
-
       <div>
-        <Grid units = {this.props.units}></Grid>
+        {this.props.isUnits ? 
+          <div id="unitGrid">
+            <UnitGrid units = {this.props.units} ></UnitGrid>
+          </div>:
+          this.props.isAgency ?
+          <div id="agencyGrid">
+            <h1>Hi</h1>
+            <AgencyGrid agencies = {this.props.agencies} ></AgencyGrid>
+          </div>:
+          <div></div>
+        }
+        
       </div>
-
       )
     }
 }

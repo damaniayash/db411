@@ -65,7 +65,7 @@ class AgentView extends React.Component{
             numBedrooms : numBedroom, 
             rentalCost : rent
         }
-
+        console.log(body);
         await axios.post('http://127.0.0.1:8000/addUnit', { body }).then((res) => {
             if (res.data === "Unit added successfully!"){
                 console.log('Unit added');

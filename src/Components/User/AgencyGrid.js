@@ -1,30 +1,29 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback} from 'react';
-import { render } from 'react-dom';
+import React, { useState, useMemo} from 'react';
 import { AgGridReact } from 'ag-grid-react'; // the AG Grid React Component
 
 import 'ag-grid-community/styles/ag-grid.css'; // Core grid CSS, always needed
 import 'ag-grid-community/styles/ag-theme-alpine.css'; // Optional theme CSS
 
-const Grid = (props) => {
+const AgencyGrid = (props) => {
 
  // Each Column Definition results in one Column.
  const [columnDefs, setColumnDefs] = useState([
-   {field: 'apartmentname', filter: true},
-   {field: 'address', filter: true},
-   {field: 'availablity', filter: true},
-   {field: 'description', filter: true},
-   {field: 'numbedrooms', filter: true},
-   {field: 'rentalcost', filter: true},
-   {field: 'agencyid', filter: true},
-   {field: 'zipcode', filter: true}
+   {field: 'average rating' },
+   {field: 'address'},
+   {field: 'name'},
+   {field: 'agencyid'},
+   {field: 'zipcode'},
+   {field: 'Number of units rated'}
  ]);
 
  // DefaultColDef sets props common to all Columns
  const defaultColDef = useMemo( ()=> ({
-     sortable: true
+     sortable: true,
+     filter: true,
+     resizable: true,
    }));
 
-   console.log(props.units);
+   console.log(props.agencies);
  return (
    <div>
 
@@ -32,7 +31,7 @@ const Grid = (props) => {
      <div className="ag-theme-alpine" style={{width: '100%', height: 500}}>
 
        <AgGridReact
-           rowData={props.units} // Row Data for Rows
+           rowData={props.agencies} // Row Data for Rows
 
            columnDefs={columnDefs} // Column Defs for Columns
            defaultColDef={defaultColDef} // Default Column Properties
@@ -45,4 +44,4 @@ const Grid = (props) => {
  );
 };
 
-export default Grid;
+export default AgencyGrid;

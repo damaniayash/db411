@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 class Search extends React.Component {
   
   constructor(props){
@@ -11,7 +10,7 @@ class Search extends React.Component {
     return (
       <div id="searchbar">
           <div id="search-menu">
-            <form className="search-form" onSubmit={this.props.getUnits.bind(this)}>
+            <form className="search-form" onSubmit={this.props.getData.bind(this)}>
                 <label>
                   Number of beds:
                   <span> </span>
@@ -50,7 +49,20 @@ class Search extends React.Component {
                       max: <input type="number"></input>
                   </label>
                   <br/>
-                  <input type="submit" value="submit"/>
+                  <input type="submit" name="searchAll" value="Search All"/>
+                  <br/>
+                  <input type="submit" name="cheapestApartments" value="Search Cheapest Apartments"/>
+                  <br/>
+            </form>
+            <form className="search-form" onSubmit={this.props.getBestAgency.bind(this)}>
+                  <label> 
+                      Area range:
+                      min: <input type="number"></input>
+                      <span> </span>
+                      max: <input type="number"></input>
+                  </label>
+                  <br/>
+                  <input type="submit" name="bestAgency" value="Best Reviewed Agency"/>
             </form>
           </div>
       </div>        
