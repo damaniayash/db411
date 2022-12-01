@@ -37,26 +37,84 @@
 # QUERY1
 # /area?min=600&max=800
 
-# # QUERY2
+# QUERY2
+# /getCheapestApartments
 # {
 #     "numBedrooms":3
 #     "zipcode":['61820', '61801']
 # }
 
+# Get submitted applications
+# GET
+# /submittedApplications/<int:id>
+# [
+#     {
+#         "apartmentId": 3,
+#         "applicationId": 1,
+#         "agencyName": "Predovic, Cormier and Champlin",
+#         "apartmentName": "Imprint",
+#         "emailId": "agress0@goodreads.com",
+#         "firstName": "Arel",
+#         "gender": "Male",
+#         "lastName": "Gress",
+#         "status": "Submitted",
+#         "unitNumber": 1
+#     }
+# ]
 
+# Reject Application
+# POST
+# http://127.0.0.1:8000/acceptApplication/1
 
+# Accept Application
+# POST 
+# http://127.0.0.1:8000/acceptApplication
+# {
+#     "body": {
+#         "applicationId": 1,
+#         "unitNumber": 1,
+#         "apartmentId": 3
+#     }
+# }
+
+# Add review
+# POST
+# http://127.0.0.1:8000/addReview
+# {
+#     "body": {
+#         "userId": 2,
+#         "unitNumber": 1,
+#         "apartmentId": 3,
+#         "review": "review !!",
+#         "rating": 5
+#     }
+# }
+
+# Analytics
+# GET
+# http://127.0.0.1:8000/getAnalytics?bedrooms=3&zipcode=61820&min=1000&max=3000
+# [
+#     {
+#         "label": "O'Reilly-Trantow",
+#         "y": [
+#             1596,
+#             2942,
+#             3
+#         ]
+#     }
+# ]
 
 from flask import Flask, request, jsonify
 import mysql.connector 
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
                               
 cnx = mysql.connector.connect(user='root', password='plus1234',
                               host='104.154.107.248',
                               database='plus')
                               
-
-    
 
 @app.route('/')
 def hello_world():
@@ -127,27 +185,15 @@ def get_apt():
         cursor = cnx.cursor(dictionary=True)
         cursor.execute(base)
         result1 = cursor.fetchall()
-        cursor = cnx.cursor(dictionary=True)
-        cursor.execute("select * from apartment")
-        result2 = cursor.fetchall()
-        ans = []
-        for index,i in enumerate(result2):
-            temp = []
-            dic = dict()
-            for j in result1:
-                if i['apartmentid'] == j['apartmentid']:
-                    temp.append(j)
-            if not temp:
-                continue
-            dic['units'] = temp
-            ans.append([i,dic])
-        return ans
+        return result1
 
 
 # Insert a new unit in an existing apartment.
 @app.route('/addUnit', methods=['POST'])
 def add_unit():
-    _json = request.json
+    
+
+    _json = request.json['body']
     _unitnumber = _json['unitNumber']
     _apartmentid = _json['apartmentId']
     _area = _json['area']
@@ -162,16 +208,18 @@ def add_unit():
         cursor.execute(sql, data)
         cnx.commit()
 
-        resp = jsonify('User added successfully!')
+        resp = jsonify('Unit added successfully!')
+
         # resp.status_code = 200
         return resp
     except Exception as e:
-        return e
+        
+        return str(e)
 
 @app.route('/area', methods =['GET'])
 def area():
-    min_area = request.args.get('min')
-    max_area = request.args.get('max')
+    min_area = int(request.args.get('min'))
+    max_area = int(request.args.get('max'))
 
     query = """
     SELECT la.name, AVG(r.rating) as 'average rating', COUNT(u.unitnumber) as 'Number of units rated', la.agencyid, la.address, la.zipcode
@@ -191,7 +239,7 @@ def area():
 # API to update rental cost of available units of specific bed configuration from a given apartment.
 @app.route('/updateUnitCost', methods=['POST'])
 def update_unit_cost():
-    _json = request.json
+    _json = request.json['body']
     _apartmentid = _json['apartmentId']
     _numbedrooms = _json['numBedrooms']
     _rentalcost = _json['rentalCost']
@@ -208,7 +256,7 @@ def update_unit_cost():
         resp.status_code = 200
         return resp
     except Exception as e:
-        print(e)
+        return str(e)
     finally:
         cursor.close()
 
@@ -227,22 +275,26 @@ def remove_apartment(id):
         resp.status_code = 200
         return resp
     except Exception as e:
-        return e
+        return str(e)
     finally:
         cursor.close()
 
 # Get the cheapest units  per leasing agency in specific zipcodes and having specific bed configurations
 @app.route('/getCheapestApartments', methods=['GET'])
 def get_cheapest_units():
-    _json = request.json
-    _numbedrooms = _json['numBedrooms']
-    _zipcode = "'" + "', '".join(_json['zipcode']) + "'"
 
-    sql = "SELECT u.unitnumber AS Unit, a.apartmentname AS ApartmentName, a.apartmentid AS ApartmentId, u.rentalcost AS rentalCost, la.name AS LeasingAgency, a.address AS Address, a.zipcode AS ZipCode FROM unit u NATURAL JOIN apartment a JOIN leasingagency la USING(agencyid) WHERE u.numbedrooms = "+str(_numbedrooms)+" AND u.availablity = 'yes' AND a.zipcode IN (" + \
-    _zipcode + \
-    ") AND u.rentalcost = ( SELECT MIN(rentalcost) FROM unit u2 NATURAL JOIN apartment a2 JOIN leasingagency la2 USING(agencyid) WHERE u2.numbedrooms = "+str(_numbedrooms)+" AND u2.availablity = 'yes' AND a2.zipcode IN ("\
-    + _zipcode +\
-    ") AND la.agencyid = la2.agencyid) ORDER BY rentalcost ASC "
+    _numbedrooms = request.args.get('bedrooms')
+    _zipcode = request.args.get('zipcode')
+
+    sql = "SELECT *\
+            FROM unit u NATURAL JOIN apartment a JOIN leasingagency la USING(agencyid) \
+            WHERE u.numbedrooms = "+str(_numbedrooms)+" AND u.availablity = 'yes' \
+            AND a.zipcode = "+str(_zipcode)+ " \
+            AND u.rentalcost = ( SELECT MIN(rentalcost) \
+                FROM unit u2 NATURAL JOIN apartment a2 JOIN leasingagency la2 USING(agencyid) \
+                WHERE u2.numbedrooms = "+str(_numbedrooms)+" AND u2.availablity = 'yes' \
+                AND a2.zipcode = "+ str(_zipcode) + " \
+                    AND la.agencyid = la2.agencyid) ORDER BY rentalcost ASC "
     # return [_zipcode,_numbedrooms]
 
     try:    
@@ -251,7 +303,142 @@ def get_cheapest_units():
         cheapUnits = cursor.fetchall()
         return cheapUnits
     except Exception as e:
-        return e
+        return str(e)
+    finally:
+        cursor.close()
+
+# API to fetch pending applications for a specific agency.
+@app.route("/submittedApplications/<int:id>", methods=["GET"])
+def get_submitted_applications_for_agency(id):
+
+    sql = "select a.applicationid as applicationId, a2.apartmentid as apartmentId, a2.apartmentname as apartmentName, a.unitnumber as unitNumber, u.firstname as firstName, \
+            u.lastname as lastName, u.email as emailId, u.gender as gender, a.status as status, l.name as agencyName \
+            from user u natural join application a natural join apartment a2 join leasingagency l using(agencyid) \
+            where a2.agencyid = " + str(id) + " and a.status = 'Submitted'"
+    try:   
+        cursor = cnx.cursor(dictionary = True)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        cnx.commit()
+        return result
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to reject an application of id by agency.
+@app.route("/rejectApplication/<int:id>", methods=["POST"])
+def reject_application(id):
+    sql = "UPDATE application SET status = 'Rejected' where applicationid = " + str(id) + " AND status = 'Submitted'"
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        res = cursor.rowcount
+        cnx.commit()
+        
+        if res != 0:
+            resp = jsonify('Application rejected successfully!')
+            resp.status_code = 200
+            return resp
+        else:
+            resp = jsonify('Application already leased or rejected!')
+            resp.status_code = 200
+            return resp
+
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to accept an application of id by agency.
+# first check if the unit is available and if not then return the message
+# If the unit is available, it will set the status of application as Leased and change the availablity of unit to no.
+# It will also execute a trigger that will automatically reject all the other applications for that unit.
+@app.route("/acceptApplication", methods=["POST"])
+def accept_application():
+ 
+    _json = request.json['body']
+    _applicationid = _json['applicationId']
+    _unitnumber = _json['unitNumber']
+    _apartmentid = _json['apartmentId']
+
+    sql = "SELECT * from unit WHERE unitnumber = " + str(_unitnumber) + " AND apartmentid = " + str(_apartmentid)  + " AND availablity = 'yes'"
+
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        unitInfo = cursor.fetchone()
+        if unitInfo != None:
+            sql = "UPDATE application SET status = 'Leased' where applicationid = " + str(_applicationid) + " AND status = 'Submitted';"
+            cursor.execute(sql)
+            sql = "UPDATE unit SET availablity = 'no' where unitnumber = " + str(_unitnumber) + " AND apartmentid = " + str(_apartmentid)  + " AND availablity = 'yes';"
+            cursor.execute(sql)
+            cnx.commit()
+            resp = jsonify('Application accepted successfully!')
+            resp.status_code = 200
+            return resp
+        else:
+            cnx.commit()
+            resp = jsonify('Unit Not Found or Not Available!')
+            resp.status_code = 404
+            return resp
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to submit a review (userid, unitnumber, apartmentid, rating, review)
+@app.route("/addReview", methods=["POST"])
+def add_review():
+
+    _json = request.json['body']
+    _userid = _json['userId']
+    _unitnumber = _json['unitNumber']
+    _apartmentid = _json['apartmentId']
+    _review = _json['review']
+    _rating = _json['rating']
+
+    # save edits
+    sql = "INSERT INTO review(reviewid, userid, unitnumber, apartmentid, review, rating) VALUES(%s, %s, %s, %s, %s, %s)"
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute('SELECT MAX(reviewid) FROM review')
+        _maxReviewId = cursor.fetchone()
+        print(_maxReviewId)
+        data = (_maxReviewId[0] + 1, _userid, _unitnumber, _apartmentid, _review, _rating)
+        cursor.execute(sql, data)
+        cnx.commit()
+
+        resp = jsonify('Review added successfully!')
+        resp.status_code = 200
+        return resp
+    except Exception as e:
+        
+        return str(e)
+ 
+# Get the analytics for different agencies based on their prices for specific zipcodes and bed configurations
+@app.route('/getAnalytics', methods=['GET'])
+def get_agency_analytics():
+ 
+    _numbedrooms = request.args.get('bedrooms')
+    _zipcode = request.args.get('zipcode')
+    _minPrice = request.args.get('min')
+    _maxPrice = request.args.get('max')
+
+    sql = "CALL GetPricesOfAgencies(" + str(_numbedrooms) + ", " + str(_zipcode) + ", " + str(_minPrice) + ", " + str(_maxPrice) + ");"
+    result = []
+    data = []
+    try:   
+        cursor = cnx.cursor(dictionary = True)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        for res in result:
+            d = { "y" : [res['minRentalCost'], res['maxRentalCost'], res['unitsAvailable']], "label" : res['agencyName']}
+            data.append(d)
+        return data
+        cnx.commit()
+    except Exception as e:
+        return str(e)
     finally:
         cursor.close()
 
