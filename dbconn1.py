@@ -1,4 +1,3 @@
-
 # GET
 
 # /apt/<int:apt_id  - get specific apartment based on id
@@ -128,6 +127,46 @@ def get_apt_id(apt_id):
     cursor.execute(query, (aptid,))
     result = cursor.fetchall()
     return result
+
+@app.route('/unit', methods =['GET'])
+def get_unit_id():
+    unitid = request.args.get('unitid')
+    aptid = request.args.get('aptid')
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM unit WHERE unitnumber = %s AND apartmentid = %s"
+    cursor.execute(query, (unitid, aptid))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/user/<int:user_id>', methods =['GET'])
+def get_user_id(user_id):
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM user WHERE userid = %s"
+    cursor.execute(query, (user_id,))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/application/<int:application_id>', methods =['GET'])
+def get_application_id(application_id):
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM application WHERE applicationid = %s"
+    cursor.execute(query, (application_id,))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/auth', methods =['GET'])
+def get_password():
+    email = request.args.get('email')
+    password = request.args.get('password')
+    print(email, password)
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM user WHERE email = %s AND passwordhash = %s"
+    cursor.execute(query, (email,password))
+    result = cursor.fetchall()
+    if result:
+        return jsonify('Success')
+    else:
+        return jsonify('Failure')
 
 @app.route('/apt', methods =['GET'])
 def get_apt():
