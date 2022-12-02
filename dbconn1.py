@@ -241,6 +241,17 @@ def application_userid():
     result = cursor.fetchall()
     return result
 
+#http://127.0.0.1:8000/review?apartmentid=3&unitnumber=1
+@app.route('/review', methods = ['GET'])
+def review():
+    aptid = request.args.get('apartmentid')
+    unitid = request.args.get('unitnumber')
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM review NATURAL JOIN unit u JOIN apartment a ON u.apartmentid = a.apartmentid WHERE a.apartmentid = %s AND u.unitnumber = %s"
+    cursor.execute(query, (aptid,unitid))
+    result = cursor.fetchall()
+    return result
+
 
 @app.route('/apt', methods =['GET'])
 def get_apt():
