@@ -232,7 +232,14 @@ def get_password():
     else:
         return jsonify('Failure')
 
-
+@app.route('/application_userid', methods = ['GET'])
+def application_userid():
+    userid = request.args.get('userid')
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM application WHERE userid = %s"
+    cursor.execute(query, (userid,))
+    result = cursor.fetchall()
+    return result
 
 
 @app.route('/apt', methods =['GET'])
