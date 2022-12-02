@@ -154,6 +154,70 @@ def get_application_id(application_id):
     result = cursor.fetchall()
     return result
 
+# {
+#         "apartmentid": 5,
+#         "applicationid": 34,
+#         "applicationtimestamp": null,
+#         "groupnumber": null,
+#         "lastupdatedtimestamp": null,
+#         "status": "",
+#         "unitnumber": 1,
+#         "userid": 4
+# }
+
+@app.route('/application', methods =['POST'])
+def post_application():
+    _json = request.json
+    _applicationid = _json['applicationid']
+    _unitnumber = _json['unitnumber']
+    _apartmentid = _json['apartmentid']
+    _status = _json['status']
+    _groupnumber = _json['groupnumber']
+    _applicationtimestamp = _json['applicationtimestamp']
+    _lastupdatedtimestamp = _json['lastupdatedtimestamp']
+    _userid = _json['userid']
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM application WHERE apartmentid = %s AND unitnumber = %s AND userid = %s"
+    cursor.execute(query, (_apartmentid,_unitnumber,_userid))
+    result1 = cursor.fetchall()
+    if not result1:
+        sql = "INSERT INTO application VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
+        data = (_applicationid, _userid, _unitnumber, _apartmentid, _status, _groupnumber, _applicationtimestamp, _lastupdatedtimestamp)
+        try:    
+            cursor = cnx.cursor()
+            cursor.execute(sql, data)
+            cnx.commit()
+
+            resp = jsonify('application added successfully!')
+
+            # resp.status_code = 200
+            return resp
+        except Exception as e:
+            
+            return str("Apartment not available for Lease OR " + str(e))
+    query = "SELECT * FROM application WHERE apartmentid = %s AND unitnumber = %s AND userid = %s AND status <> \"Leased\""
+    cursor.execute(query, (_apartmentid,_unitnumber,_userid))
+    result2 = cursor.fetchall()
+    if result2:
+        sql = "INSERT INTO application VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
+        data = (_applicationid, _userid, _unitnumber, _apartmentid, _status, _groupnumber, _applicationtimestamp, _lastupdatedtimestamp)
+        try:    
+            cursor = cnx.cursor()
+            cursor.execute(sql, data)
+            cnx.commit()
+
+            resp = jsonify('application added successfully!')
+
+            # resp.status_code = 200
+            return resp
+        except Exception as e:
+            
+            return str("Apartment not available for Lease OR " + str(e))
+
+    else:
+        return jsonify('Could not create application')
+
+
 @app.route('/auth', methods =['GET'])
 def get_password():
     email = request.args.get('email')
@@ -167,6 +231,9 @@ def get_password():
         return jsonify('Success')
     else:
         return jsonify('Failure')
+
+
+
 
 @app.route('/apt', methods =['GET'])
 def get_apt():
