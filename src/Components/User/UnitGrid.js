@@ -13,7 +13,7 @@ const Grid = (props) => {
    {field: 'availablity'},
    {field: 'numbedrooms'},
    {field: 'rentalcost'},
-   {field: 'agencyid'},
+   {field: 'name'},
    {field: 'zipcode'}
  ]);
 

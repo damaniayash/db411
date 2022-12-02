@@ -17,7 +17,6 @@ export default class UnitList extends React.Component{
           </div>:
           this.props.isAgency ?
           <div id="agencyGrid">
-            <h1>Hi</h1>
             <AgencyGrid agencies = {this.props.agencies} ></AgencyGrid>
           </div>:
           <div></div>

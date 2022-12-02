@@ -1,7 +1,9 @@
 import React from "react";
 import axios from 'axios';
-import { Form } from "react-router-dom";
+import { Form, useParams } from "react-router-dom";
 import { waitFor } from "@testing-library/react";
+import ApplicationListItem from "./ApplicationListItem.js";
+
 
 
 class AgentView extends React.Component{
@@ -10,8 +12,54 @@ class AgentView extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-
+            applications: [],
+            agent_id : 0
         }
+    }
+
+    
+
+    async showHomePage(){
+        console.log('home page');
+        document.getElementsByClassName('addUnit-message')[0].style.display = 'none';
+        var addUnitForm = document.getElementsByClassName('add-unit-form');
+        addUnitForm[0].style.display = "none";
+        var updatePriceForm = document.getElementsByClassName('update-price-form');
+        updatePriceForm[0].style.display = "none";
+        var removeAptForm = document.getElementsByClassName('remove-apt-form');
+        removeAptForm[0].style.display = "none";
+        document.getElementsByClassName('removeApt-message')[0].style.display = 'none';
+
+        document.getElementsByClassName('show-list')[0].style.display = 'block';
+
+
+        var agency_id = this.state.agent_id; 
+        console.log(agency_id);
+
+        //api call to get data
+        await axios.get('http://127.0.0.1:8000/submittedApplications/'+agency_id).then((res) => {
+            if(Array.isArray(res.data)){
+                this.setState({applications : res.data});
+            }
+        })
+
+        console.log(this.state.agent_id);
+
+        //process data and store in state variable
+
+    }
+
+    async componentDidMount(){
+
+        const id  = this.props;
+        console.log(id)
+
+        await this.setState({agent_id : id.agentId})
+
+        this.showHomePage();
+
+        
+
     }
 
     updatePriceButton(){
@@ -23,6 +71,7 @@ class AgentView extends React.Component{
         var removeAptForm = document.getElementsByClassName('remove-apt-form');
         removeAptForm[0].style.display = "none";
         document.getElementsByClassName('removeApt-message')[0].style.display = 'none';
+        document.getElementsByClassName('show-list')[0].style.display = 'none';
     }
     
 
@@ -35,6 +84,7 @@ class AgentView extends React.Component{
         var removeAptForm = document.getElementsByClassName('remove-apt-form');
         removeAptForm[0].style.display = "none";
         document.getElementsByClassName('removeApt-message')[0].style.display = 'none';
+        document.getElementsByClassName('show-list')[0].style.display = 'none';
     }
 
     removeApartmentButton(){
@@ -47,6 +97,7 @@ class AgentView extends React.Component{
 
         var removeAptForm = document.getElementsByClassName('remove-apt-form');
         removeAptForm[0].style.display = "block";
+        document.getElementsByClassName('show-list')[0].style.display = 'none';
     }
 
     async addUnitSubmit(event){
@@ -73,6 +124,12 @@ class AgentView extends React.Component{
                 mes[0].style.display = 'block';
                 mes[0].innerHTML = 'Unit added successfuly';
                 
+            }
+            else if(res.data.includes("Duplicate entry")){
+                console.log(res.data);
+                var mes = document.getElementsByClassName('addUnit-message');
+                mes[0].style.display = 'block';
+                mes[0].innerHTML = 'Unit already exists.';
             }
             else {
                 console.log('Some error : ' + res.data);
@@ -138,9 +195,19 @@ class AgentView extends React.Component{
         return (
             <>
                 <h1>Agent view</h1>
+                <button onClick={this.showHomePage.bind(this)}>Home Page</button>
                 <button onClick={this.addUnitButton.bind(this)}>Add a new unit</button>
                 <button onClick={this.updatePriceButton.bind(this)}>Update existing unit/apartment</button>
                 <button onClick={this.removeApartmentButton.bind(this)}>Remove an apartment</button>
+
+                <div class="show-list">
+                    <h1>Pending submissions</h1>
+                    {
+                        this.state.applications.map((x)=>{
+                            return (<ApplicationListItem>{x}</ApplicationListItem>)
+                        })
+                    }
+                </div>
 
                 <form class="form-horizontal add-unit-form" style={{display:"none"}} onSubmit={this.addUnitSubmit}>
                     <div class="form-group">

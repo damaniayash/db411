@@ -1,18 +1,19 @@
 import React from "react";
 
 import {Routes, Route} from "react-router-dom";
+
 import Login from "../Components/Auth/Login";
-import UserView from "../Components/User/UserView";
 
+import { useNavigation } from "react-router-dom";
 
-function UserRouter (){
+function AuthRouter (){
+
   return  (
         <Routes>
-            <Route path="/user" element={<UserView />} />
             <Route path="/login" element={<Login />} />
         </Routes>
   )
  
 }
 
-export default UserRouter;
+export default AuthRouter;

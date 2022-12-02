@@ -1,4 +1,3 @@
-
 # GET
 
 # /apt/<int:apt_id  - get specific apartment based on id
@@ -44,8 +43,65 @@
 #     "zipcode":['61820', '61801']
 # }
 
+# Get submitted applications
+# GET
+# /submittedApplications/<int:id>
+# [
+#     {
+#         "apartmentId": 3,
+#         "applicationId": 1,
+#         "agencyName": "Predovic, Cormier and Champlin",
+#         "apartmentName": "Imprint",
+#         "emailId": "agress0@goodreads.com",
+#         "firstName": "Arel",
+#         "gender": "Male",
+#         "lastName": "Gress",
+#         "status": "Submitted",
+#         "unitNumber": 1
+#     }
+# ]
 
+# Reject Application
+# POST
+# http://127.0.0.1:8000/acceptApplication/1
 
+# Accept Application
+# POST 
+# http://127.0.0.1:8000/acceptApplication
+# {
+#     "body": {
+#         "applicationId": 1,
+#         "unitNumber": 1,
+#         "apartmentId": 3
+#     }
+# }
+
+# Add review
+# POST
+# http://127.0.0.1:8000/addReview
+# {
+#     "body": {
+#         "userId": 2,
+#         "unitNumber": 1,
+#         "apartmentId": 3,
+#         "review": "review !!",
+#         "rating": 5
+#     }
+# }
+
+# Analytics
+# GET
+# http://127.0.0.1:8000/getAnalytics?bedrooms=3&zipcode=61820&min=1000&max=3000
+# [
+#     {
+#         "label": "O'Reilly-Trantow",
+#         "y": [
+#             1596,
+#             2942,
+#             3
+#         ]
+#     }
+# ]
 
 from flask import Flask, request, jsonify
 import mysql.connector 
@@ -71,6 +127,46 @@ def get_apt_id(apt_id):
     cursor.execute(query, (aptid,))
     result = cursor.fetchall()
     return result
+
+@app.route('/unit', methods =['GET'])
+def get_unit_id():
+    unitid = request.args.get('unitid')
+    aptid = request.args.get('aptid')
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM unit WHERE unitnumber = %s AND apartmentid = %s"
+    cursor.execute(query, (unitid, aptid))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/user/<int:user_id>', methods =['GET'])
+def get_user_id(user_id):
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM user WHERE userid = %s"
+    cursor.execute(query, (user_id,))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/application/<int:application_id>', methods =['GET'])
+def get_application_id(application_id):
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM application WHERE applicationid = %s"
+    cursor.execute(query, (application_id,))
+    result = cursor.fetchall()
+    return result
+
+@app.route('/auth', methods =['GET'])
+def get_password():
+    email = request.args.get('email')
+    password = request.args.get('password')
+    print(email, password)
+    cursor = cnx.cursor(dictionary=True)
+    query = "SELECT * FROM user WHERE email = %s AND passwordhash = %s"
+    cursor.execute(query, (email,password))
+    result = cursor.fetchall()
+    if result:
+        return result
+    else:
+        return jsonify('Failure')
 
 @app.route('/apt', methods =['GET'])
 def get_apt():
@@ -245,6 +341,141 @@ def get_cheapest_units():
         cursor.execute(sql)
         cheapUnits = cursor.fetchall()
         return cheapUnits
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+
+# API to fetch pending applications for a specific agency.
+@app.route("/submittedApplications/<int:id>", methods=["GET"])
+def get_submitted_applications_for_agency(id):
+
+    sql = "select a.applicationid as applicationId, a2.apartmentid as apartmentId, a2.apartmentname as apartmentName, a.unitnumber as unitNumber, u.firstname as firstName, \
+            u.lastname as lastName, u.email as emailId, u.gender as gender, a.status as status, l.name as agencyName \
+            from user u natural join application a natural join apartment a2 join leasingagency l using(agencyid) \
+            where a2.agencyid = " + str(id) + " and a.status = 'Submitted'"
+    try:   
+        cursor = cnx.cursor(dictionary = True)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        cnx.commit()
+        return result
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to reject an application of id by agency.
+@app.route("/rejectApplication/<int:id>", methods=["POST"])
+def reject_application(id):
+    sql = "UPDATE application SET status = 'Rejected' where applicationid = " + str(id) + " AND status = 'Submitted'"
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        res = cursor.rowcount
+        cnx.commit()
+        
+        if res != 0:
+            resp = jsonify('Application rejected successfully!')
+            resp.status_code = 200
+            return resp
+        else:
+            resp = jsonify('Application already leased or rejected!')
+            resp.status_code = 200
+            return resp
+
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to accept an application of id by agency.
+# first check if the unit is available and if not then return the message
+# If the unit is available, it will set the status of application as Leased and change the availablity of unit to no.
+# It will also execute a trigger that will automatically reject all the other applications for that unit.
+@app.route("/acceptApplication", methods=["POST"])
+def accept_application():
+ 
+    _json = request.json['body']
+    _applicationid = _json['applicationId']
+    _unitnumber = _json['unitNumber']
+    _apartmentid = _json['apartmentId']
+
+    sql = "SELECT * from unit WHERE unitnumber = " + str(_unitnumber) + " AND apartmentid = " + str(_apartmentid)  + " AND availablity = 'yes'"
+
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        unitInfo = cursor.fetchone()
+        if unitInfo != None:
+            sql = "UPDATE application SET status = 'Leased' where applicationid = " + str(_applicationid) + " AND status = 'Submitted';"
+            cursor.execute(sql)
+            sql = "UPDATE unit SET availablity = 'no' where unitnumber = " + str(_unitnumber) + " AND apartmentid = " + str(_apartmentid)  + " AND availablity = 'yes';"
+            cursor.execute(sql)
+            cnx.commit()
+            resp = jsonify('Application accepted successfully!')
+            resp.status_code = 200
+            return resp
+        else:
+            cnx.commit()
+            resp = jsonify('Unit Not Found or Not Available!')
+            resp.status_code = 404
+            return resp
+    except Exception as e:
+        return str(e)
+    finally:
+        cursor.close()
+ 
+# API to submit a review (userid, unitnumber, apartmentid, rating, review)
+@app.route("/addReview", methods=["POST"])
+def add_review():
+
+    _json = request.json['body']
+    _userid = _json['userId']
+    _unitnumber = _json['unitNumber']
+    _apartmentid = _json['apartmentId']
+    _review = _json['review']
+    _rating = _json['rating']
+
+    # save edits
+    sql = "INSERT INTO review(reviewid, userid, unitnumber, apartmentid, review, rating) VALUES(%s, %s, %s, %s, %s, %s)"
+    try:   
+        cursor = cnx.cursor()
+        cursor.execute('SELECT MAX(reviewid) FROM review')
+        _maxReviewId = cursor.fetchone()
+        print(_maxReviewId)
+        data = (_maxReviewId[0] + 1, _userid, _unitnumber, _apartmentid, _review, _rating)
+        cursor.execute(sql, data)
+        cnx.commit()
+
+        resp = jsonify('Review added successfully!')
+        resp.status_code = 200
+        return resp
+    except Exception as e:
+        
+        return str(e)
+ 
+# Get the analytics for different agencies based on their prices for specific zipcodes and bed configurations
+@app.route('/getAnalytics', methods=['GET'])
+def get_agency_analytics():
+ 
+    _numbedrooms = request.args.get('bedrooms')
+    _zipcode = request.args.get('zipcode')
+    _minPrice = request.args.get('min')
+    _maxPrice = request.args.get('max')
+
+    sql = "CALL GetPricesOfAgencies(" + str(_numbedrooms) + ", " + str(_zipcode) + ", " + str(_minPrice) + ", " + str(_maxPrice) + ");"
+    result = []
+    data = []
+    try:   
+        cursor = cnx.cursor(dictionary = True)
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        for res in result:
+            d = { "y" : [res['minRentalCost'], res['maxRentalCost'], res['unitsAvailable']], "label" : res['agencyName']}
+            data.append(d)
+        return data
+        cnx.commit()
     except Exception as e:
         return str(e)
     finally:
